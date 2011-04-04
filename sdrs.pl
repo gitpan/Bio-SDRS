@@ -5,8 +5,6 @@ use lib "lib";
 use Getopt::Long;
 use Bio::SDRS;
 
-my (%values, %arange, %brange, %sst, %max, %min);
-
 my $multiple = 1.18;
 my $ldose = 0.17;
 my $hdose = 30000;

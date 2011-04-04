@@ -15,7 +15,7 @@ my $step = 20;
 my $maxproc = 4;
 my $trim = 0;
 my $outdir = ".";
-my $debug = 1;
+my $debug = 0;
 
 my $sdrs = Bio::SDRS->new();
 ok($sdrs, "Object created.");

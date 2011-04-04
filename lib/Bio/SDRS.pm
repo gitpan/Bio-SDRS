@@ -33,7 +33,7 @@ my %component = map { ($_ => 1) } ('MULTIPLE', 'LDOSE', 'HDOSE', 'STEP',
 				   'MAXPROC', 'TRIM', 'SIGNIFICANCE', 
 				   'TMPDIR', 'DEBUG');
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 1;
 
@@ -172,7 +172,7 @@ sub new {
     $self->{MAXPROC} = 2;
     $self->{TRIM} = 0.6;
     $self->{SIGNIFICANCE} = 0.05;
-    $self->{DEBUG} = 1;
+    $self->{DEBUG} = 0;
     $self->_init_tmp;
     
     return $self;
