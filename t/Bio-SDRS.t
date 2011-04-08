@@ -82,10 +82,42 @@ foreach my $f (('sdrs.1.05.20.EC50.out',
 		'sdrs.pval_FDR.out',
 		'sdrs.sorted_probes.out')) {
     ok(system("sort t/${f} >t/${f}.srt") == 0, "Sort ${f}");
-    ok(system("diff t/${f}.srt t/ref.${f}.srt") == 0, "Compare ${f}");
+    &compare_files("t/${f}.srt", "t/ref.${f}.srt");
 }
 
+sub compare_files {
+    my $file1 = shift;
+    my $file2 = shift;
+    my $limit = 1000;
 
+    local (*IN1, *IN2);
 
+    ok(open (IN1, "<$file1"), "Open $file1");
+    ok(open (IN2, "<$file2"), "Open $file2");
+    my $count = 0;
+    while (my $line1 = <IN1>) {
+	my $line2 = <IN2>;
+	if (not defined $line2) {
+	    ok(0, "$file1 bigger than $file2");
+	    last;
+	}
+	$count++;
+	if ($line1 eq $line2) {
+	    ok(1, "Lines $count match");
+	}
+	else {
+	    if ($limit-- > 0) {
+		ok($line1 eq $line2,
+		   "line $count match: line1 = $line1  line2 = $line2");
+	    }
+	}
+    }
+    my $line2 = <IN2>;
+    if (defined $line2) {
+	ok(0, "$file2 bigger than $file1");
+    }
+    close IN1;
+    close IN2;
+}
 
 

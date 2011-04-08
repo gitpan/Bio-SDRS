@@ -6,7 +6,7 @@ WriteMakefile(
     NAME              => 'Bio::SDRS',
     VERSION_FROM      => 'lib/Bio/SDRS.pm', # finds $VERSION
     PREREQ_PM         => { "Inline" => 0.45, # e.g., Module::Name => 1.1
-		           "Math::NumberCruncher" => 5.00, 
+		           "Math::NumberCruncher" => "5.00", 
 			   "Statistics::Distributions" => 1.02
 			 }, 
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005

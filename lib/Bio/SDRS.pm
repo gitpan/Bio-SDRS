@@ -33,7 +33,7 @@ my %component = map { ($_ => 1) } ('MULTIPLE', 'LDOSE', 'HDOSE', 'STEP',
 				   'MAXPROC', 'TRIM', 'SIGNIFICANCE', 
 				   'TMPDIR', 'DEBUG');
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 1;
 
