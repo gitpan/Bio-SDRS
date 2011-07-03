@@ -8,7 +8,8 @@ WriteMakefile(
     PREREQ_PM         => { "Inline" => 0.45, # e.g., Module::Name => 1.1
 		           "Math::NumberCruncher" => "5.00", 
 			   "Statistics::Distributions" => 1.02
-			 }, 
+			 },
+    EXE_FILES         => [ 'sdrs.pl' ],
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Bio/SDRS.pm', # retrieve abstract from module
 		AUTHOR         => join(', ',

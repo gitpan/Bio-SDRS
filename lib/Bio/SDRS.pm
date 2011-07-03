@@ -33,7 +33,7 @@ my %component = map { ($_ => 1) } ('MULTIPLE', 'LDOSE', 'HDOSE', 'STEP',
 				   'MAXPROC', 'TRIM', 'SIGNIFICANCE', 
 				   'TMPDIR', 'DEBUG');
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 1;
 
@@ -94,7 +94,7 @@ for characterizing biological responses to compounds.
   $sdrs->score_doses;
   $sdrs->sorted_assays_by_dose([$dose]);
   $sdrs->pvalues_by_dose([$dose])
-  $sdrs->ec50data([$assay[, $property]]);
+  $sdrs->ec50data([$assay[, $property[, $precision]]]);
 
 =head3 Other Methods
 
@@ -656,14 +656,15 @@ sub pvalues_by_dose {
     }
 }
 
-=item C<ec50data([$assay[, $property]])>
+=item C<ec50data([$assay[, $property[, $precision]]])>
 
 Returns EC50 data for the calculation. If no arguments are specified,
 then the internal hash for the EC50 calculation are returned. If just
 an C<$assay> is specified, then the internal hash for all the EC50
 values associated with that C<$assay> is returned. If an C<$assay> and
 C<$property> are specified, then the property for that assay is
-returned.
+returned. If the C<$precision> operand is specified, then it controls
+how many digits of precision are returned for the value.
 
 Here is the list of possible properties.
 
@@ -686,6 +687,9 @@ sub ec50data {
     my $self = shift;
     my $assay = shift;
     my $property = shift;
+    my $precision = shift;
+
+    $precision = 6 if not defined $precision;
     if ($self->{STATE} ne 'calculated') {
 	$self->calculate;
     }
@@ -707,7 +711,11 @@ sub ec50data {
 		return undef;
 	    }
 	    else {
-		return $assaydata->{$property};
+		my $ret = $assaydata->{$property};
+		if ($ret ne "" and $ret != int($ret)) {
+		    $ret = sprintf("%.${precision}g", $ret) + 0.0;
+		}
+		return $ret;
 	    }
 	}
     }
