@@ -33,7 +33,7 @@ my %component = map { ($_ => 1) } ('MULTIPLE', 'LDOSE', 'HDOSE', 'STEP',
 				   'MAXPROC', 'TRIM', 'SIGNIFICANCE', 
 				   'TMPDIR', 'DEBUG');
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 1;
 
@@ -804,7 +804,9 @@ sub _scan_dose_point {
 	$a = sprintf("%.3f", $a);
 	$b = sprintf("%.3f", $b);
 	$d = sprintf("%.3f", $d);
-	$ecstring .= "$assay\t$dose\t$f_score\t$a\t$b\t$d\n";
+	$ecstring .= "$assay\t" .
+	    sprintf("%.5f", $dose) .
+		"\t$f_score\t$a\t$b\t$d\n";
     }
     return $ecstring;
 }

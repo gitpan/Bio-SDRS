@@ -70,13 +70,14 @@ open (PVAL, ">t/sdrs.pval_FDR.out") ||
     die "can not open p value output file: $!\n";
 
 foreach my $dose ($sdrs->score_doses) {
-    print SORT "$dose\t", join("\t", $sdrs->sorted_assays_by_dose($dose)), "\n";
-    print PVAL "$dose\t", join("\t", $sdrs->pvalues_by_dose($dose)), "\n";
+    my $dose_st = sprintf("%.5f", $dose);
+    print SORT "${dose_st}\t", join("\t", $sdrs->sorted_assays_by_dose($dose)), "\n";
+    print PVAL "${dose_st}\t", join("\t", $sdrs->pvalues_by_dose($dose)), "\n";
 }
 
 close SORT;
 close PVAL;
-
+$ENV{"LC_ALL"} = "C";
 foreach my $f (('sdrs.1.05.20.EC50.out',
 		'sdrs.1.05.20.out',
 		'sdrs.pval_FDR.out',
