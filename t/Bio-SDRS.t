@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More qw(no_plan);
+use Test::More tests => 43987;
 BEGIN { use_ok('Bio::SDRS') };
 
 my $multiple = 1.05;

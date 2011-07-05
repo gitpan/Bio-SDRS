@@ -33,7 +33,7 @@ my %component = map { ($_ => 1) } ('MULTIPLE', 'LDOSE', 'HDOSE', 'STEP',
 				   'MAXPROC', 'TRIM', 'SIGNIFICANCE', 
 				   'TMPDIR', 'DEBUG');
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 1;
 
@@ -251,7 +251,7 @@ can be used for the search. The upper limit is 64 and the lower limit is 1.
 =item C<trim([$trim_value])>
 
 Retrieves the current setting for the C<trim> value, and optionally
-sets it. This value specifies ta trimming factor for the number of
+sets it. This value specifies the trimming factor for the number of
 assays. If the C<trim> is 0, then all assays will be used, and if 1,
 no assays will be used.  It must be between 0 and 1.
 
@@ -897,6 +897,11 @@ sub _date {
 
     
 use Inline C => <<'END_OF_C_CODE', NAME => 'Bio::SDRS::FastSSE'; 
+
+void extract_double_array(SV *arrayp,
+			  double a[],
+			  I32 asize,
+			  I32 *limitp);
 
 void _compute_best_sse(double al,
                       double ah,
