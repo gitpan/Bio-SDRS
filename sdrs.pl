@@ -146,7 +146,7 @@ This value specifies the maximum change in doses in the
 search. In the search process, this module starts at the ldose
 value. It tries multiplying the current dose by the C<multiple> value,
 but it will only increase the dose by no more than the C<step> value
-specified here.  It must be positiv.e
+specified here.  It must be positive.
 
 =item -maxproc=<integer>
 
@@ -154,7 +154,20 @@ Specifies the maximum number of processes to be used in the search.
 
 =item -trim=<float>
 
-Trims the number of measurements used in the analysis by this factor. Must be a real number between zero and one, although zero makes no sense because no experiments would be used in the analysis.
+This value specifies the proportion of assays to be omitted in the analysis.
+
+First, the maximal response across the doses is calculated for every
+assay. Then, assays with lower response will be removed from the
+analysis by this factor. Must be a real number between zero and one,
+where a value of zero (default) means all assays will be analyzed, and
+one means none.
+
+This factor is useful when the SDRS result will be fed into a multiple
+test correction procedure such as a false discovery rate (FDR)
+algorithm. For example, for genome-scale transcriptional dose response
+data, a non-zero value is suggested to remove non-expressed
+transcripts, which not only speeds up the process, but also improves
+the FDR output.
 
 =item -outdir=<directory>
 
@@ -174,9 +187,9 @@ This program provides a simple command line interface to the C<Bio::SDRS> Perl m
 =head1 INPUT FILE
 
 There is only one input file to this script which is meant to provide
-the data for one experiment. The file provides the doses of compound
+the data for a number of assays. The file provides the doses of compound
 used in the experiment, and it provides the measurements for each dose
-for every compound used in the experiment. The file uses Tab Separated Value (TSV) format,
+for every assay. The file uses Tab Separated Value (TSV) format,
 with each value separated from each other using the Tab character
 (ASCII code 9).
 
@@ -187,13 +200,13 @@ following line would describe a eight dose experiment.
 Dose	0.42	1.27	3.81	11.43	34.29 	102.88	308.64	925.92	
 
 The succeeding lines of the input file are the measured responses for
-each compound tested, with no limit to the number of compounds. The
-first word in each line is the name of the compound, and the remaining
+each assay, with no limit to the number of assays. The
+first word in each line is the assay name, and the remaining
 lines are the responses for each dose as specified in the dose line at
 the top of the file, and in the same order. Here is an example
 response line consistent with the dose example above:
 
-Aspirin	2.1	1.695	1.675	1.735	1.56	1.77	2.34	2.595
+Caspase3	2.1	1.695	1.675	1.735	1.56	1.77	2.34	2.595
 
 =head1 OUTPUT FILES
 
@@ -201,44 +214,45 @@ The output files are written to the directory specified by the C<outdir> option 
 
 =head2 sdrs.C<multiple>.C<step>.out
 
-The values of the sigmoidal function along with F-score for every
-tested value for every compound. Each line is a tab separated value
-containing the compound, dose, F-score for the fit, A, B, and D value.
+This file contains the best (local) fitting model at every search dose
+for every assay.  Each line is a tab separated value containing the
+assay name, search dose, F-score for the best fit at the dose and
+corresponding A, B, and D values.
 
 =head2 sdrs.C<multiple>.C<step>.EC50.out
 
-Provides all the EC50 data for each compound in the input file as a
+This file contains the estimated EC50 data for each assay in the input file as a
 tab separated record. The columns are as follows:
 
- 1  Compound
+ 1  assay name
  2  MAX         Maximum F score
  3  MIN         Minimum F score
- 4  LOW         Low value for the dose.
- 5  HIGH        High value for the dose.
- 6  EC50        EC50 for the dose search.
- 7  PVALUE      F score P value
- 8  EC50RANGE   Range of dose values where F score cutoff is satisfied.
- 9  PEAK        Number of peaks in the F score.
-10  A           A parameter in the sigmoid function.
-11  B           B parameter in the sigmoid function.
-12  D           D parameter in the sigmoid function.
-13  FOLD        Positive Ratio of B/A or 99999.0 if a == 0.
+ 4  LOW         Lower bound of 95% confidence interval for the estimated EC50. 
+ 5  HIGH        Upper bound of 95% confidence interval for the estimated EC50.
+ 6  EC50        estimated EC50.
+ 7  PVALUE      P value of the best fitting model
+ 8  EC50RANGE   range of 95% confidence interval for the estimated EC50.
+ 9  PEAK        Number of peaks in the F scores at search doses across experimental dose range.
+10  A           estimated value for A in the best model.
+11  B           estimated value for B in the best model.
+12  D           estimated value for D in the best model.
+13  FOLD        Ratio of B/A or 99999.0 if a == 0. Positive if D < 0, negative otherwise.
 
 =head2 sdrs.sorted_probes.out
 
-For every calculated dose in the search, list the compounds in order
+For every calculated dose in the search, list the assays in order
 of F score. Each line in this file is a TSV record where the first
 field is the calculated dose, and the remaining fields are the
-compound names.
+assay names.
 
 =head2 sdrs.pval_FDR.out
 
 For every calculated dose in the search, list the P Values for fit for
-the compounds in order of F score exactly in the same order as the
+the assays in order of F score exactly in the same order as the
 sdrs.sorted_probes.out file.  Each line in this file is a TSV record
 where the first field is the calculated dose, and the remaining fields
-are the compound names. This file is meant to be used in conjunction
-with the sdrs.sorted_probes.out files.
+are the assay names. This file is meant to be used in conjunction
+with the sdrs.sorted_probes.out file.
 
 =head1 SEE ALSO
 

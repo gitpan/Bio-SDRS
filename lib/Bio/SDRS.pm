@@ -33,7 +33,7 @@ my %component = map { ($_ => 1) } ('MULTIPLE', 'LDOSE', 'HDOSE', 'STEP',
 				   'MAXPROC', 'TRIM', 'SIGNIFICANCE', 
 				   'TMPDIR', 'DEBUG');
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 1;
 
@@ -670,16 +670,16 @@ Here is the list of possible properties.
 
   MAX         Maximum F score
   MIN         Minimum F score
-  LOW         Low value for the dose.
-  HIGH        High value for the dose.
-  EC50        EC50 for the dose search.
-  PVALUE      F score P value
-  EC50RANGE   Range of dose values where F score cutoff is satisfied.
-  PEAK        Number of peaks in the F score.
-  A           A parameter in the sigmoid function.
-  B           B parameter in the sigmoid function.
-  D           D parameter in the sigmoid function.
-  FOLD        Positive Ratio of B/A or 99999.0 if a == 0.
+  LOW         Lower bound of 95% confidence interval for the estimated EC50. 
+  HIGH        Upper bound of 95% confidence interval for the estimated EC50.
+  EC50        Estimated EC50.
+  PVALUE      P value of the best fitting model
+  EC50RANGE   range of 95% confidence interval for the estimated EC50.
+  PEAK        Number of peaks in the F scores at search doses across experimental dose range.
+  A           Estimated value for A in the best model.
+  B           Estimated value for B in the best model.
+  D           Estimated value for D in the best model.
+  FOLD        Ratio of B/A or 99999.0. If A == 0. Positive if D < 0, negative otherwise.
 
 =cut
 
@@ -892,6 +892,18 @@ sub _date {
 }
 
 =back
+
+=head1 SEE ALSO
+
+sdrs.pl
+
+=head1 AUTHORS
+
+ Ruiru Ji <ruiruji@gmail.com>
+ Nathan O. Siemers <nathan.siemers@bms.com>
+ Lei Ming <lei.ming@bms.com>
+ Liang Schweizer <liang.schweizer@bms.com>
+ Robert Bruccoleri <bruc@acm.org>
 
 =cut
 
