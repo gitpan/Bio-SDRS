@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 43987;
+use Test::More tests => 43988;
 BEGIN { use_ok('Bio::SDRS') };
 
 my $multiple = 1.05;
@@ -14,6 +14,7 @@ my $hdose = 25000;
 my $step = 20;
 my $maxproc = 4;
 my $trim = 0;
+my $significance = 0.05;
 my $outdir = ".";
 my $debug = 0;
 
@@ -25,6 +26,7 @@ ok($sdrs->hdose($hdose) == $hdose, "hdose set");
 ok($sdrs->step($step) == $step, "step set");
 ok($sdrs->maxproc($maxproc) == $maxproc, "maxproc set");
 ok($sdrs->trim($trim) == $trim, "trim set");
+ok($sdrs->significance($significance) == $significance, "significance set");
 ok($sdrs->debug($debug) == $debug, "debug set");
 
 my $infile = "t/OVCAR4_HCS_avg.txt";

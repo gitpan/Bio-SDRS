@@ -10,27 +10,30 @@ my $ldose = 0.17;
 my $hdose = 30000;
 my $step = 60;
 my $maxproc = 20;
-my $trim = 0.6;
+my $trim = 0.0;
 my $outdir = ".";
 my $debug = 0;
+my $significance = 0.05;
 &GetOptions("multiple=f" => \$multiple,
 	    "ldose=f" => \$ldose,
 	    "hdose=f" => \$hdose,
 	    "step=f" => \$step,
 	    "maxproc=i" => \$maxproc,
 	    "trim=f" => \$trim,
+	    "significance=f" => \$significance,
  	    "outdir=s" => \$outdir,
 	    "debug!" => \$debug);
 
 my $usage = <<EOF;
-sdrs.pl [-[no]debug          ]                         input-file
-        [-multiple=<float>   ] Default: $multiple
-        [-ldose=<float>      ] Default: $ldose
-        [-hdose=<float>      ] Default: $hdose
-        [-step=<float>       ] Default: $step
-        [-maxproc=<integer>  ] Default: $maxproc
-        [-trim=<float>       ] Default: $trim
-        [-outdir=<directory> ] Default: $outdir
+sdrs.pl [-[no]debug            ]                         input-file
+        [-multiple=<float>     ] Default: $multiple
+        [-ldose=<float>        ] Default: $ldose
+        [-hdose=<float>        ] Default: $hdose
+        [-step=<float>         ] Default: $step
+        [-maxproc=<integer>    ] Default: $maxproc
+        [-trim=<float>         ] Default: $trim
+        [-significance=<float> ] Default: $significance
+        [-outdir=<directory>   ] Default: $outdir
 EOF
 
 if (scalar(@ARGV) != 1) {
@@ -45,6 +48,7 @@ $sdrs->hdose($hdose);
 $sdrs->step($step);
 $sdrs->maxproc($maxproc);
 $sdrs->trim($trim);
+$sdrs->significance($significance);
 $sdrs->debug($debug);
 
 my $infile = $ARGV[0];
@@ -120,6 +124,7 @@ sdrs.pl - Command line script to use Bio::SDRS to run a Signmoidal Dose Response
             -ldose=0.4 \
             -hdose=25000 \
             -trim=0 \
+            -significance=0.05 \
             -outdir=results \
             data/OVCAR4_HCS_avg.txt
 
@@ -168,6 +173,12 @@ algorithm. For example, for genome-scale transcriptional dose response
 data, a non-zero value is suggested to remove non-expressed
 transcripts, which not only speeds up the process, but also improves
 the FDR output.
+
+=item -significance=<float>
+
+This value specifies the minimum permitted
+significance value for the F score cutoff. It must be between zero and
+1.
 
 =item -outdir=<directory>
 

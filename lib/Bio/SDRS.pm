@@ -33,7 +33,7 @@ my %component = map { ($_ => 1) } ('MULTIPLE', 'LDOSE', 'HDOSE', 'STEP',
 				   'MAXPROC', 'TRIM', 'SIGNIFICANCE', 
 				   'TMPDIR', 'DEBUG');
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 1;
 
@@ -170,7 +170,7 @@ sub new {
     $self->{HDOSE} = 30000;
     $self->{STEP} = 60;
     $self->{MAXPROC} = 2;
-    $self->{TRIM} = 0.6;
+    $self->{TRIM} = 0.0;
     $self->{SIGNIFICANCE} = 0.05;
     $self->{DEBUG} = 0;
     $self->_init_tmp;
@@ -322,12 +322,12 @@ sub AUTOLOAD {
     if ($name eq "TRIM" and
 	($self->{TRIM} < 0.0 or
 	 $self->{TRIM} > 1.0)) {
-	croak "trim parameter must be between 0 and 1\n";
+	croak "trim parameter must be between 0 and 1, inclusive\n";
     }
     if ($name eq "SIGNIFICANCE" and
 	($self->{SIGNIFICANCE} <= 0.0 or
 	 $self->{SIGNIFICANCE} >= 1.0)) {
-	croak "trim parameter must be between 0 and 1\n";
+	croak "trim parameter must be between 0 and 1, exclusive\n";
     }
     return $self->{$name};
 }
