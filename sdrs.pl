@@ -94,7 +94,13 @@ foreach my $assay ($sdrs->assays) {
     foreach my $prop (('MAX', 'MIN', 'LOW', 'HIGH', 'EC50',
 		       'PVALUE', 'EC50RANGE', 'PEAK', 'A', 'B',
 		       'D', 'FOLD')) {
-	print OUT "\t", $sdrs->ec50data($assay, $prop);
+	my $ec50data = $sdrs->ec50data($assay, $prop);
+	if (not defined $ec50data) {
+	    print OUT "\tNo EC50 data";
+	}
+	else {
+	    print OUT "\t", $ec50data;
+	}
     }
     print OUT "\n";
 }

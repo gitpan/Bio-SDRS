@@ -4,7 +4,7 @@ use 5.008;
 use strict;
 use vars qw(@ISA @EXPORT @EXPORT_OK %EXPORT_TAGS $VERSION $AUTOLOAD);
 use warnings;
-use Carp;
+use Carp qw(cluck croak carp);
 use POSIX;
 use Math::NumberCruncher;
 use Statistics::Distributions;
@@ -33,7 +33,7 @@ my %component = map { ($_ => 1) } ('MULTIPLE', 'LDOSE', 'HDOSE', 'STEP',
 				   'MAXPROC', 'TRIM', 'SIGNIFICANCE', 
 				   'TMPDIR', 'DEBUG');
 
-our $VERSION = '0.08';
+our $VERSION = '0.11';
 
 1;
 
@@ -515,11 +515,17 @@ sub calculate {
     %{$self->{PVAL_DATA}} = ();
     foreach my $dose (keys %{$self->{FSCORES}}) {
 	my %fs = %{$self->{FSCORES}->{$dose}};
-	foreach my $assay (sort {$fs{$b} <=> $fs{$a}} (keys %fs)) {
+	foreach my $assay (sort {$fs{$b} <=> $fs{$a} || $a cmp $b } (keys %fs)) {
 	    push (@{$self->{SORTED_DATA}->{$dose}}, $assay);
-	    my $pvalue = Statistics::Distributions::fprob($self->{FDISTR_N},
-							  $self->{FDISTR_M},
-							  $fs{$assay});
+	    my $pvalue;
+	    if ($fs{$assay} < 0) {
+		$pvalue = 1.0;
+	    }
+	    else {
+		$pvalue = Statistics::Distributions::fprob($self->{FDISTR_N},
+							   $self->{FDISTR_M},
+							   $fs{$assay});
+	    }
 	    push (@{$self->{PVAL_DATA}->{$dose}}, $pvalue);
 	}
     }
@@ -544,9 +550,15 @@ sub calculate {
 	} else {
 	    $high = $low = $peak = $ec50range = '';
 	}
-	my $pvalue = Statistics::Distributions::fprob($self->{FDISTR_N},
-						      $self->{FDISTR_M},
-						      $max);
+	my $pvalue;
+	if ($max <= 0.0) {
+	    $pvalue = 1.0;
+	}
+	else {
+	    $pvalue = Statistics::Distributions::fprob($self->{FDISTR_N},
+						       $self->{FDISTR_M},
+						       $max);
+	}
 	my ($a, $b, $d) = split (/\:/, $param{$ec50});
 	if ($d >= 0) {
 	    if ($a != 0) {
@@ -669,7 +681,9 @@ how many digits of precision are returned for the value.
 Here is the list of possible properties.
 
   MAX         Maximum F score
-  MIN         Minimum F score
+  MIN         Minimum F score. If this property is negative, then an error
+              was encountered in the calculation of F scores. This is likely due
+              insufficient range in the responses.
   LOW         Lower bound of 95% confidence interval for the estimated EC50. 
   HIGH        Upper bound of 95% confidence interval for the estimated EC50.
   EC50        Estimated EC50.
@@ -799,14 +813,24 @@ sub _scan_dose_point {
 						       $dose,
 						       $self->{VALUES}->{$assay},
 						       $self->{DOSES});
-	my $f_score = ($self->{SST}->{$assay} - $best_sse) * $m / ($best_sse * $n);
-	$f_score = sprintf("%.3f", $f_score);
-	$a = sprintf("%.3f", $a);
-	$b = sprintf("%.3f", $b);
-	$d = sprintf("%.3f", $d);
-	$ecstring .= "$assay\t" .
-	    sprintf("%.5f", $dose) .
-		"\t$f_score\t$a\t$b\t$d\n";
+	if ($best_sse == 0 or $n == 0) {
+	    carp sprintf("best_sse($best_sse) = 0 or n($n) = 0 for $assay. arange = %s  brange = %s\n",
+			 $self->{ARANGE}->{$assay},
+			 $self->{BRANGE}->{$assay});
+	    $ecstring .= "$assay\t" .
+		sprintf("%.5f", $dose) .
+		    "\t-1\t-1\t-1\t-1\n";
+	}
+	else {
+	    my $f_score = ($self->{SST}->{$assay} - $best_sse) * $m / ($best_sse * $n);
+	    $f_score = sprintf("%.3f", $f_score);
+	    $a = sprintf("%.3f", $a);
+	    $b = sprintf("%.3f", $b);
+	    $d = sprintf("%.3f", $d);
+	    $ecstring .= "$assay\t" .
+		sprintf("%.5f", $dose) .
+		    "\t$f_score\t$a\t$b\t$d\n";
+	}
     }
     return $ecstring;
 }
@@ -833,6 +857,10 @@ sub _find_step {
     my ($l, $h, $step);
     $step = $stdev / 2.5;
     $step = sprintf("%.3f", $step);
+    if ($step == 0.0) {
+	carp "Data range too small for $assay -- step size raised to 0.001.\n";
+	$step = "0.001";
+    }
     if ($pam eq 'a') {
 	$h = $mean + 2.3*$stdev;
 	$l = $mean - 2*$stdev;
@@ -946,9 +974,12 @@ void _compute_best_sse(double al,
     }
     
     for (a = al; a < ah; a += astep) {
+//	fprintf(stderr, "a = %14.10g\n", a);
 	for (b = bh; b > bl && a <= b; b -= bstep) {
+//	    fprintf(stderr, "b = %14.10g\n", b);
 	    diff = b - a;
 	    for (d = -6; d < 6.3; d += 0.3) {
+//  	        fprintf(stderr, "d = %14.10g  dlimit = %d\n", d, dlimit);
 		sse = 0;
 		for (i = 0; i <= dlimit; i++) {
 		    tmp = doses[i] / dose;

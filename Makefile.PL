@@ -6,6 +6,7 @@ WriteMakefile(
     NAME              => 'Bio::SDRS',
     VERSION_FROM      => 'lib/Bio/SDRS.pm', # finds $VERSION
     PREREQ_PM         => { "Inline" => 0.45, # e.g., Module::Name => 1.1
+			   "Inline::C" => 0,
 		           "Math::NumberCruncher" => "5.00", 
 			   "Statistics::Distributions" => 1.02
 			 },

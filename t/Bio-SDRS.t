@@ -5,7 +5,9 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 43988;
+local *STDERR = *STDOUT;
+
+use Test::More qw(no_plan);
 BEGIN { use_ok('Bio::SDRS') };
 
 my $multiple = 1.05;
@@ -18,80 +20,91 @@ my $significance = 0.05;
 my $outdir = ".";
 my $debug = 0;
 
-my $sdrs = Bio::SDRS->new();
-ok($sdrs, "Object created.");
-ok($sdrs->multiple($multiple) == $multiple, "Multiple set");
-ok($sdrs->ldose($ldose) == $ldose, "ldose set");
-ok($sdrs->hdose($hdose) == $hdose, "hdose set");
-ok($sdrs->step($step) == $step, "step set");
-ok($sdrs->maxproc($maxproc) == $maxproc, "maxproc set");
-ok($sdrs->trim($trim) == $trim, "trim set");
-ok($sdrs->significance($significance) == $significance, "significance set");
-ok($sdrs->debug($debug) == $debug, "debug set");
+my $ifile = 0;
+foreach my $infile (("t/OVCAR4_HCS_avg.txt",
+		     "t/divzero.txt")) {
+    $ifile += 1;
+    my $sdrs = Bio::SDRS->new();
+    ok($sdrs, "Object created.");
+    ok($sdrs->multiple($multiple) == $multiple, "Multiple set");
+    ok($sdrs->ldose($ldose) == $ldose, "ldose set");
+    ok($sdrs->hdose($hdose) == $hdose, "hdose set");
+    ok($sdrs->step($step) == $step, "step set");
+    ok($sdrs->maxproc($maxproc) == $maxproc, "maxproc set");
+    ok($sdrs->trim($trim) == $trim, "trim set");
+    ok($sdrs->significance($significance) == $significance, "significance set");
+    ok($sdrs->debug($debug) == $debug, "debug set");
 
-my $infile = "t/OVCAR4_HCS_avg.txt";
+    open (IN, $infile) || die "can not open infile $infile: $!\n";
+    my $doses = <IN>;
+    chomp($doses);
+    $doses =~ s/\s*$//;
+    my @doses = split (/\t/, $doses);
+    shift @doses;
 
-open (IN, $infile) || die "can not open infile $infile: $!\n";
-my $doses = <IN>;
-chomp($doses);
-$doses =~ s/\s*$//;
-my @doses = split (/\t/, $doses);
-shift @doses;
-
-$sdrs->doses(@doses);
-my $count = 0;
-while (<IN>) {
-    chomp;
-    $count++;
-    my ($assay, @data) = split (/\t/, $_);
-    $sdrs->set_assay($assay, @data);
-}
-close IN;
-$sdrs->calculate;
-my $file = "t/sdrs.$multiple.$step.out";
-open (OUT, ">$file") ||
-    die "Unable to open $file: $!\n";
-print OUT $sdrs->scandata;
-close OUT;
-open (OUT, ">t/sdrs.$multiple.$step.EC50.out") ||
-    die "can not open EC50 output file: $!\n";
-foreach my $assay ($sdrs->assays) {
-    print OUT "$assay";
-    foreach my $prop (('MAX', 'MIN', 'LOW', 'HIGH', 'EC50',
-		       'PVALUE', 'EC50RANGE', 'PEAK', 'A', 'B',
-		       'D', 'FOLD')) {
-	print OUT "\t", $sdrs->ec50data($assay, $prop);
+    $sdrs->doses(@doses);
+    my $count = 0;
+    while (<IN>) {
+	chomp;
+	$count++;
+	my ($assay, @data) = split (/\t/, $_);
+	$sdrs->set_assay($assay, @data);
     }
-    print OUT "\n";
-}
-close OUT;
+    close IN;
+    $sdrs->calculate;
+    open (OUT, ">t/sdrs.$ifile.$multiple.$step.EC50.out") ||
+	die "can not open EC50 output file: $!\n";
+    foreach my $assay ($sdrs->assays) {
+	print OUT "$assay";
+	foreach my $prop (('MAX', 'MIN', 'LOW', 'HIGH', 'EC50',
+			   'PVALUE', 'EC50RANGE', 'PEAK', 'A', 'B',
+			   'D', 'FOLD')) {
+	    print OUT "\t", $sdrs->ec50data($assay, $prop);
+	}
+	print OUT "\n";
+    }
+    close OUT;
+    my $file = "t/sdrs.$ifile.$multiple.$step.out";
+    open (OUT, ">$file") ||
+	die "Unable to open $file: $!\n";
+    print OUT $sdrs->scandata;
+    close OUT;
+    # The following test bypasses some of the analysis checking
+    # because the divide by zero error causes inconsistent results
+    # from one machine to another. What's important is that the ec50
+    # comes back as -1, which the above files check.
+    if ($ifile != 2) { 
+	open (SORT, ">t/sdrs.$ifile.sorted_probes.out") ||
+	    die "can not open sorted probeset output file: $!\n";
+	open (PVAL, ">t/sdrs.$ifile.pval_FDR.out") ||
+	    die "can not open p value output file: $!\n";
 
-open (SORT, ">t/sdrs.sorted_probes.out") ||
-    die "can not open sorted probeset output file: $!\n";
-open (PVAL, ">t/sdrs.pval_FDR.out") ||
-    die "can not open p value output file: $!\n";
+	foreach my $dose ($sdrs->score_doses) {
+	    my $dose_st = sprintf("%.5f", $dose);
+	    print SORT "${dose_st}\t", join("\t", $sdrs->sorted_assays_by_dose($dose)), "\n";
+	    print PVAL "${dose_st}\t", join("\t", $sdrs->pvalues_by_dose($dose)), "\n";
+	}
 
-foreach my $dose ($sdrs->score_doses) {
-    my $dose_st = sprintf("%.5f", $dose);
-    print SORT "${dose_st}\t", join("\t", $sdrs->sorted_assays_by_dose($dose)), "\n";
-    print PVAL "${dose_st}\t", join("\t", $sdrs->pvalues_by_dose($dose)), "\n";
-}
-
-close SORT;
-close PVAL;
-$ENV{"LC_ALL"} = "C";
-foreach my $f (('sdrs.1.05.20.EC50.out',
-		'sdrs.1.05.20.out',
-		'sdrs.pval_FDR.out',
-		'sdrs.sorted_probes.out')) {
-    ok(system("sort t/${f} >t/${f}.srt") == 0, "Sort ${f}");
-    &compare_files("t/${f}.srt", "t/ref.${f}.srt");
+	close SORT;
+	close PVAL;
+    }
+    
+    $ENV{"LC_ALL"} = "C";
+    foreach my $f (("sdrs.$ifile.1.05.20.EC50.out",
+		    "sdrs.$ifile.1.05.20.out",
+		    "sdrs.$ifile.pval_FDR.out",
+		    "sdrs.$ifile.sorted_probes.out")) {
+	if (-r "t/${f}" and -r "t/ref.${f}.srt") {
+	    ok(system("sort t/${f} >t/${f}.srt") == 0, "Sort ${f}");
+	    &compare_files("t/${f}.srt", "t/ref.${f}.srt");
+	}
+    }
 }
 
 sub compare_files {
     my $file1 = shift;
     my $file2 = shift;
-    my $limit = 1000;
+    my $limit = 1;
 
     local (*IN1, *IN2);
 
@@ -106,12 +119,34 @@ sub compare_files {
 	}
 	$count++;
 	if ($line1 eq $line2) {
-	    ok(1, "Lines $count match");
+	    ok(1, "$file1: Lines $count match");
 	}
 	else {
+	    chomp $line1;
+	    chomp $line2;
 	    if ($limit-- > 0) {
-		ok($line1 eq $line2,
-		   "line $count match: line1 = $line1  line2 = $line2");
+		my @words1 = split(/\t/, $line1);
+		my @words2 = split(/\t/, $line2);
+		my $ok = (scalar(@words1) == scalar(@words2));
+		for (my $i = 0; $i < scalar(@words1); $i++) {
+		    if ($words1[$i] ne $words2[$i]) {
+			if ($words1[$i] eq 'inf') {
+			    if ($words2[$i] < 1.0e300) {
+				$ok = 0;
+			    }
+			}
+			elsif ($words2[$i] eq 'inf') {
+			    if ($words1[$i] < 1.0e300) {
+				$ok = 0;
+			    }
+			}
+			else {
+			    $ok = 0;
+			}
+		    }
+		}
+		ok($ok,
+		   "$file1: line $count match: line1 = $line1\nline2 = $line2");
 	    }
 	}
     }
